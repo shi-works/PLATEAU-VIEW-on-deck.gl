@@ -85,7 +85,8 @@
         bearing: 0,
         pitch: 30,
       },
-      controller: true,
+      // controller: true,
+      controller: {inertia: true},
       effects: [
         new deck.LightingEffect({ ambientLight, directionalLight })
       ],
