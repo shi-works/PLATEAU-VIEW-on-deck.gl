@@ -1,0 +1,31 @@
+<html>
+
+<head>
+  <title>3D都市モデル（PLATEAU）/3DTiles/建物（千代田区）</title>
+  <meta charset="UTF-8">
+  <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+  <script src="https://unpkg.com/@loaders.gl/3d-tiles@^2.3.0/dist/dist.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div id="control-panel">
+    <h3>lights</h3>
+    <div class="input">
+      <label>ambientLight</label>
+      <input id="ambientLight" type="range" min="0" max="10" step="0.1" value="3.0"></input>
+      <span id="ambientLight-value"></span>
+    </div>
+    <div class="input">
+      <label>directionalLight</label>
+      <input id="directionalLight" type="range" min="0" max="20" step="0.1" value="9.0"></input>
+      <span id="directionalLight-value"></span>
+    </div>
+  </div>
+  <div id="tooltip"></div>
+  <a id=map_credit
+    href=https://github.com/Project-PLATEAU/plateau-streaming-tutorial>&copy;3D都市モデルPLATEAU配信サービス（試験運用）</a>
+  <script src="script.js"></script>
+</body>
+
+</html>
