@@ -1,0 +1,152 @@
+<html>
+
+<head>
+  <title>3D都市モデル（PLATEAU）/3DTiles/建物（千代田区）</title>
+  <meta charset="UTF-8">
+  <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+  <script src="https://unpkg.com/@loaders.gl/3d-tiles@^2.3.0/dist/dist.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    html,
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #control-panel {
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin: 12px;
+      padding: 20px;
+      font-size: 12px;
+      line-height: 1.5;
+      z-index: 1;
+      background: #fff;
+      font-family: Helvetica, Arial, sans-serif;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
+    }
+
+    #map_credit {
+      display: inline-block;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      padding: 0.2em;
+      margin: 0;
+      background-color: rgba(255, 255, 255, .7);
+      font-size: 70%;
+      color: black;
+      z-index: 10000;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="control-panel">
+    <h3>lights</h3>
+    <div class="input">
+      <label>ambientLight</label>
+      <input id="ambientLight" type="range" min="0" max="10" step="0.1" value="3.0"></input>
+      <span id="ambientLight-value"></span>
+    </div>
+    <div class="input">
+      <label>directionalLight</label>
+      <input id="directionalLight" type="range" min="0" max="20" step="0.1" value="9.0"></input>
+      <span id="directionalLight-value"></span>
+    </div>
+  </div>
+  <a id=map_credit
+    href=https://github.com/Project-PLATEAU/plateau-streaming-tutorial>&copy;3D都市モデルPLATEAU配信サービス（試験運用）</a>
+  <script src="script.js"></script>
+  <script type="text/javascript">
+    const INPUTS = Array.from(document.querySelectorAll('input'));
+
+    // create ambient light source
+    const ambientLight = new deck.AmbientLight({
+      color: [255, 255, 255],
+      intensity: 3.0
+    });
+
+    // create directional light source
+    const directionalLight = new deck.DirectionalLight({
+      color: [255, 255, 255],
+      intensity: 9.0,
+      direction: [-3, -9, -1]
+    });
+
+    const deckgl = new deck.DeckGL({
+      initialViewState: {
+        latitude: 35.6812405,
+        longitude: 139.7649361,
+        zoom: 16,
+        bearing: 0,
+        pitch: 30,
+      },
+      controller: true,
+      effects: [
+        new deck.LightingEffect({ ambientLight, directionalLight })
+      ],
+      layers: [
+        new deck.Tile3DLayer({
+          id: "tile3dlayer",
+          pointSize: 1,
+          data: 'https://plateau.geospatial.jp/main/data/3d-tiles/bldg/13100_tokyo/13101_chiyoda-ku/low_resolution/tileset.json', // 千代田区
+          loader: Tiles3DLoader,
+          opacity: 1,
+          pickable: true,
+          onTileLoad: d => {
+            const { content } = d;
+            const buffer = content.batchTableBinary.buffer;
+            const key = content.batchTableJson;
+            const len = key._gml_id.length;
+            const zMinView = new DataView(buffer, key._zmin.byteOffset, len * 8);
+            const zMins = [];
+
+            for (let i = 0; i < len; i++) {
+              zMins.push(zMinView.getFloat64(i * 8, true));
+            }
+            zMins.sort((a, b) => a - b);
+            content.cartographicOrigin.z -= 36.6641 + zMins[Math.floor(len / 2)];
+          }
+        }),
+        new deck.TileLayer({
+          data: "https://gic-plateau.s3.ap-northeast-1.amazonaws.com/2020/ortho/tiles/{z}/{x}/{y}.png",
+          minZoom: 0,
+          maxZoom: 19,
+          tileSize: 256,
+          renderSubLayers: props => new deck.BitmapLayer(props, {
+            data: null,
+            image: props.data,
+            bounds: (({ west, south, east, north }) => [west, south, east, north])(props.tile.bbox),
+          }),
+        })
+      ]
+    });
+
+    redraw();
+
+    INPUTS.forEach(el => {
+      el.oninput = redraw;
+    });
+
+    function redraw() {
+      const settings = {};
+      INPUTS.forEach(el => {
+        const name = el.id;
+        const value = +el.value;
+        settings[name] = value;
+        document.getElementById(name + '-value').innerHTML = value;
+      });
+
+      ambientLight.intensity = settings.ambientLight;
+      directionalLight.intensity = settings.directionalLight;
+
+      deckgl.redraw(true);
+    }
+  </script>
+</body>
+
+</html>
